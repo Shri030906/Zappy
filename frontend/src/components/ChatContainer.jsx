@@ -1,5 +1,6 @@
 import { useChatStore } from "../store/useChatStore";
 import { useEffect, useRef } from "react";
+import { X } from "lucide-react";
 
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
@@ -71,7 +72,20 @@ const ChatContainer = () => {
                 {formatMessageTime(message.createdAt)}
               </time>
             </div>
-            <div className="chat-bubble flex flex-col">
+            <div className="chat-bubble flex flex-col relative group">
+              {message.senderId === authUser._id && (
+                <button
+                  onClick={() => {
+                    if (confirm("Are you sure you want to delete this message?")) {
+                      useChatStore.getState().deleteMessage(message._id);
+                    }
+                  }}
+                  className="absolute -left-8 top-0 text-error opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
+                  title="Delete message"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
               {message.image && (
                 <img
                   src={message.image}
