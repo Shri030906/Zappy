@@ -73,14 +73,16 @@ const ChatContainer = () => {
               </time>
             </div>
             <div className="chat-bubble flex flex-col relative group">
-              {message.senderId === authUser._id && (
+              {(message.senderId === authUser._id || message.receiverId === authUser._id) && (
                 <button
                   onClick={() => {
                     if (confirm("Are you sure you want to delete this message?")) {
                       useChatStore.getState().deleteMessage(message._id);
                     }
                   }}
-                  className="absolute -left-8 top-0 text-error opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
+                  className={`absolute top-0 text-error opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 ${
+                    message.senderId === authUser._id ? "-left-8" : "-right-8"
+                  }`}
                   title="Delete message"
                 >
                   <X className="w-4 h-4" />

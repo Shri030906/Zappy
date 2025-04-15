@@ -40,14 +40,19 @@ export const deleteMessage = async (req, res) => {
     const { messageId } = req.params;
     const userId = req.user._id;
 
-    const message = await Message.findOneAndDelete({
-      _id: messageId,
-      senderId: userId
-    });
+    // Find the message first
+    const message = await Message.findById(messageId);
 
     if (!message) {
-      return res.status(404).json({ error: "Message not found or unauthorized" });
+      return res.status(404).json({ error: "Message not found" });
     }
+
+    // Allow deletion if user is sender or receiver
+    if (message.senderId.toString() !== userId.toString() && message.receiverId.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "Unauthorized to delete this message" });
+    }
+
+    await Message.findByIdAndDelete(messageId);
 
     // Notify receiver via socket
     const receiverSocketId = getReceiverSocketId(message.receiverId);
