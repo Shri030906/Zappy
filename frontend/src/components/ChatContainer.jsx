@@ -7,7 +7,6 @@ import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import { useAuthStore } from "../store/useAuthStore";
 import { formatMessageTime } from "../lib/utils";
-
 const bannedWords = [
   // English examples (censored)
   "Arsehole","Asshat","Asshole","Bastard (slang)","Big black cock","Bitch (slang)","Bloody","Blowjob","Bollocks","Bugger","Bullshit","Chicken shit","Clusterfuck","Cock (slang)","Cocksucker","Coonass","Cornhole (slang)","Cox–Zucker machine","Cracker (term)","Crap (word)","Cunt","Damn","Dick (slang)","Dumbass","Enshittification","Faggot","Feck","List of films that most frequently use the word fuck","Fuck","Fuck her right in the pussy","Fuck Joe Biden","Fuck, marry, kill","Fuckery","Grab 'em by the pussy","Healslut","If You See Kay","Jesus fucking christ","Kike","Motherfucker","Nigga","Nigger","Use of nigger in proper names","Paki (slur)","Poof","Poofter","Prick (slang)","Pussy","Ratfucking","Retard (pejorative)","Russian warship, go fuck yourself","Serving cunt","Shit","Shit happens","Shithouse","Shitposting","Shitter","Shut the fuck up","Shut the hell up","Slut","Son of a bitch","Spic","Taking the piss","Twat","Unclefucker","Wanker","Whore",
@@ -32,7 +31,8 @@ const replaceBadWords = (text) => {
   if (!text) return text;
   let replaced = text;
   bannedWords.forEach((word) => {
-    const regex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, "gi");
+    // Match word with optional punctuation after it
+    const regex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}(?=\\W|$)`, "gi");
     replaced = replaced.replace(regex, "[Inappropriate content]");
   });
   return replaced;
@@ -127,7 +127,7 @@ const ChatContainer = () => {
               )}
               {message.text && (
                 <p>
-                  {replaceBadWords(message.text)}
+                  {useChatStore.getState().showInappropriateWords ? message.text : replaceBadWords(message.text)}
                 </p>
               )}
             </div>

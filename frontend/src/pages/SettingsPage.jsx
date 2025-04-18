@@ -13,11 +13,9 @@ import { useState } from "react";
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
   const { showInappropriateWords, setShowInappropriateWords } = useChatStore();
-  const [showInappropriate, setShowInappropriate] = useState(showInappropriateWords);
 
   const handleToggle = () => {
-    setShowInappropriate(!showInappropriate);
-    setShowInappropriateWords(!showInappropriate);
+    setShowInappropriateWords(!showInappropriateWords);
   };
 
   return (
@@ -125,7 +123,7 @@ const SettingsPage = () => {
             <input
               type="checkbox"
               id="toggleInappropriate"
-              checked={showInappropriate}
+              checked={showInappropriateWords}
               onChange={handleToggle}
               className="form-checkbox h-5 w-5 text-blue-600"
             />
