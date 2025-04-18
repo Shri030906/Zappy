@@ -7,8 +7,18 @@ const PREVIEW_MESSAGES = [
   { id: 2, content: "I'm doing great! Just working on some new features.", isSent: true },
 ];
 
+import { useChatStore } from "../store/useChatStore";
+import { useState } from "react";
+
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
+  const { showInappropriateWords, setShowInappropriateWords } = useChatStore();
+  const [showInappropriate, setShowInappropriate] = useState(showInappropriateWords);
+
+  const handleToggle = () => {
+    setShowInappropriate(!showInappropriate);
+    setShowInappropriateWords(!showInappropriate);
+  };
 
   return (
     <div className="h-screen container mx-auto px-4 pt-20 max-w-5xl">
@@ -108,6 +118,19 @@ const SettingsPage = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <label htmlFor="toggleInappropriate" className="inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              id="toggleInappropriate"
+              checked={showInappropriate}
+              onChange={handleToggle}
+              className="form-checkbox h-5 w-5 text-blue-600"
+            />
+            <span className="ml-2 text-gray-700">Show Inappropriate Words</span>
+          </label>
         </div>
       </div>
     </div>

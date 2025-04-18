@@ -9,6 +9,9 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+  showInappropriateWords: true,
+
+  setShowInappropriateWords: (show) => set({ showInappropriateWords: show }),
 
   getUsers: async () => {
     set({ isUsersLoading: true });
