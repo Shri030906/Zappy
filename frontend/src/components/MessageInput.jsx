@@ -1,13 +1,51 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
-import { Image, Send, X } from "lucide-react";
+import { Image, Send, X, Camera } from "lucide-react";
 import toast from "react-hot-toast";
 
 const MessageInput = ({ isBusinessChat }) => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [videoStream, setVideoStream] = useState(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
   const { sendMessage } = useChatStore();
+
+  useEffect(() => {
+    if (isCameraOpen) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then((stream) => {
+          setVideoStream(stream);
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        })
+        .catch(() => {
+          toast.error("Could not access camera");
+          setIsCameraOpen(false);
+        });
+    } else {
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        setVideoStream(null);
+      }
+    }
+  }, [isCameraOpen]);
+
+  const handleCapture = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/png");
+    setImagePreview(dataUrl);
+    setIsCameraOpen(false);
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -39,7 +77,6 @@ const MessageInput = ({ isBusinessChat }) => {
         chatType: isBusinessChat ? "business" : "regular",
       });
 
-      // Clear form
       setText("");
       setImagePreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -70,6 +107,27 @@ const MessageInput = ({ isBusinessChat }) => {
         </div>
       )}
 
+      {isCameraOpen && (
+        <div className="mb-3">
+          <video ref={videoRef} autoPlay playsInline className="w-full rounded-lg" />
+          <button
+            onClick={handleCapture}
+            className="btn btn-primary mt-2"
+            type="button"
+          >
+            Capture
+          </button>
+          <button
+            onClick={() => setIsCameraOpen(false)}
+            className="btn btn-secondary mt-2 ml-2"
+            type="button"
+          >
+            Cancel
+          </button>
+          <canvas ref={canvasRef} style={{ display: "none" }} />
+        </div>
+      )}
+
       <form onSubmit={handleSendMessage} className="flex items-center gap-2">
         <div className="flex-1 flex gap-2">
           <input
@@ -78,6 +136,7 @@ const MessageInput = ({ isBusinessChat }) => {
             placeholder="Type a message..."
             value={text}
             onChange={(e) => setText(e.target.value)}
+            disabled={isCameraOpen}
           />
           <input
             type="file"
@@ -85,6 +144,7 @@ const MessageInput = ({ isBusinessChat }) => {
             className="hidden"
             ref={fileInputRef}
             onChange={handleImageChange}
+            disabled={isCameraOpen}
           />
 
           <button
@@ -92,8 +152,19 @@ const MessageInput = ({ isBusinessChat }) => {
             className={`hidden sm:flex btn btn-circle
                      ${imagePreview ? "text-emerald-500" : "text-zinc-400"}`}
             onClick={() => fileInputRef.current?.click()}
+            disabled={isCameraOpen}
           >
             <Image size={20} />
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-circle btn-primary sm:flex"
+            onClick={() => setIsCameraOpen(true)}
+            disabled={isCameraOpen}
+            title="Open Camera"
+          >
+            <Camera size={20} />
           </button>
         </div>
         <button
