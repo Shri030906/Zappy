@@ -26,6 +26,11 @@ const messageSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    chatType: {
+      type: String,
+      enum: ["regular", "business"],
+      default: "regular",
+    },
   },
   { timestamps: true }
 );

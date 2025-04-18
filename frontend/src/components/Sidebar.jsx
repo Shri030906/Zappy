@@ -5,7 +5,7 @@ import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 import { Users } from "lucide-react";
 
 const Sidebar = () => {
-  const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } = useChatStore();
+  const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading, chatType, setChatType } = useChatStore();
 
   const { onlineUsers } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
@@ -27,7 +27,22 @@ const Sidebar = () => {
           <Users className="size-6" />
           <span className="font-medium hidden lg:block">Contacts</span>
         </div>
-        {/* TODO: Online filter toggle */}
+        {/* Chat type toggle */}
+        <div className="mt-3 flex items-center gap-4">
+          <button
+            className={`btn btn-sm ${chatType === "regular" ? "btn-primary" : "btn-outline"}`}
+            onClick={() => setChatType("regular")}
+          >
+            Regular Chat
+          </button>
+          <button
+            className={`btn btn-sm ${chatType === "business" ? "btn-primary" : "btn-outline"}`}
+            onClick={() => setChatType("business")}
+          >
+            Business Chat
+          </button>
+        </div>
+        {/* Online filter toggle */}
         <div className="mt-3 hidden lg:flex items-center gap-2">
           <label className="cursor-pointer flex items-center gap-2">
             <input

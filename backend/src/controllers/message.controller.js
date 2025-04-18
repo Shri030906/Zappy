@@ -20,8 +20,10 @@ export const getMessages = async (req, res) => {
   try {
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
+    const chatType = req.query.chatType || "regular";
 
     const messages = await Message.find({
+      chatType,
       $or: [
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
@@ -69,7 +71,7 @@ export const deleteMessage = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image } = req.body;
+    const { text, image, chatType } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -85,6 +87,7 @@ export const sendMessage = async (req, res) => {
       receiverId,
       text,
       image: imageUrl,
+      chatType: chatType || "regular",
     });
 
     await newMessage.save();
