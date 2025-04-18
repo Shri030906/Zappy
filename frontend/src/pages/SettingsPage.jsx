@@ -8,7 +8,6 @@ const PREVIEW_MESSAGES = [
 ];
 
 import { useChatStore } from "../store/useChatStore";
-import { useState } from "react";
 
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
@@ -21,6 +20,19 @@ const SettingsPage = () => {
   return (
     <div className="h-screen container mx-auto px-4 pt-20 max-w-5xl">
       <div className="space-y-6">
+        <div className="mt-6">
+          <label htmlFor="toggleInappropriate" className="inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              id="toggleInappropriate"
+              checked={showInappropriateWords}
+              onChange={handleToggle}
+              className="form-checkbox h-5 w-5 text-blue-600"
+            />
+            <span className="ml-2 text-gray-700">Show Inappropriate Words</span>
+          </label>
+        </div>
+
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-semibold">Theme</h2>
           <p className="text-sm text-base-content/70">Choose a theme for your chat interface</p>
@@ -116,19 +128,6 @@ const SettingsPage = () => {
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="mt-6">
-          <label htmlFor="toggleInappropriate" className="inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              id="toggleInappropriate"
-              checked={showInappropriateWords}
-              onChange={handleToggle}
-              className="form-checkbox h-5 w-5 text-blue-600"
-            />
-            <span className="ml-2 text-gray-700">Show Inappropriate Words</span>
-          </label>
         </div>
       </div>
     </div>
