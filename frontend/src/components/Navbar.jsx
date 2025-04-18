@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
+import { useChatStore } from "../store/useChatStore";
 import { LogOut, MessageSquare, Settings, User } from "lucide-react";
 
 const Navbar = () => {
   const { logout, authUser } = useAuthStore();
+  const { chatType, setChatType } = useChatStore();
 
   return (
     <header
@@ -22,12 +24,23 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Chat type toggle buttons */}
+            <button
+              className={`btn btn-sm ${chatType === "regular" ? "btn-primary" : "btn-outline"}`}
+              onClick={() => setChatType("regular")}
+            >
+              Regular Chat
+            </button>
+            <button
+              className={`btn btn-sm ${chatType === "business" ? "btn-primary" : "btn-outline"}`}
+              onClick={() => setChatType("business")}
+            >
+              Business Chat
+            </button>
+
             <Link
               to={"/settings"}
-              className={`
-              btn btn-sm gap-2 transition-colors
-
-              `}
+              className="btn btn-sm gap-2 transition-colors"
             >
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Settings</span>
@@ -35,7 +48,7 @@ const Navbar = () => {
 
             {authUser && (
               <>
-                <Link to={"/profile"} className={`btn btn-sm gap-2`}>
+                <Link to={"/profile"} className="btn btn-sm gap-2">
                   <User className="size-5" />
                   <span className="hidden sm:inline">Profile</span>
                 </Link>
