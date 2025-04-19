@@ -4,8 +4,14 @@ import { useAuthStore } from "../store/useAuthStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 import { Users } from "lucide-react";
 
+function formatExactLastSeen(dateString) {
+  if (!dateString) return "Last seen: unknown";
+  const date = new Date(dateString);
+  return `Last seen: ${date.toLocaleString()}`;
+}
+
 const Sidebar = () => {
-  const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } = useChatStore();
+  const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading, unreadCounts } = useChatStore();
 
   const { onlineUsers } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
@@ -14,8 +20,10 @@ const Sidebar = () => {
     getUsers();
   }, [getUsers]);
 
+  const onlineUserIds = onlineUsers.map((id) => id.toString());
+
   const filteredUsers = showOnlineOnly
-    ? users.filter((user) => onlineUsers.includes(user._id))
+    ? users.filter((user) => onlineUserIds.includes(user._id.toString()))
     : users;
 
   if (isUsersLoading) return <SidebarSkeleton />;
@@ -27,7 +35,7 @@ const Sidebar = () => {
           <Users className="size-6" />
           <span className="font-medium hidden lg:block">Contacts</span>
         </div>
-        {/* TODO: Online filter toggle */}
+        {/* Online filter toggle */}
         <div className="mt-3 hidden lg:flex items-center gap-2">
           <label className="cursor-pointer flex items-center gap-2">
             <input
@@ -38,7 +46,7 @@ const Sidebar = () => {
             />
             <span className="text-sm">Show online only</span>
           </label>
-          <span className="text-xs text-zinc-500">({onlineUsers.length - 1} online)</span>
+          <span className="text-xs text-zinc-500">({onlineUserIds.length - 1} online)</span>
         </div>
       </div>
 
@@ -59,11 +67,19 @@ const Sidebar = () => {
                 alt={user.name}
                 className="size-12 object-cover rounded-full"
               />
-              {onlineUsers.includes(user._id) && (
+              {onlineUserIds.includes(user._id.toString()) && (
                 <span
                   className="absolute bottom-0 right-0 size-3 bg-green-500 
                   rounded-full ring-2 ring-zinc-900"
                 />
+              )}
+              {unreadCounts[user._id] > 0 && (
+                <span
+                  className="absolute top-0 right-0 size-4 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+                  title={`${unreadCounts[user._id]} unread message(s)`}
+                >
+                  {unreadCounts[user._id]}
+                </span>
               )}
             </div>
 
@@ -71,7 +87,9 @@ const Sidebar = () => {
             <div className="hidden lg:block text-left min-w-0">
               <div className="font-medium truncate">{user.fullName}</div>
               <div className="text-sm text-zinc-400">
-                {onlineUsers.includes(user._id) ? "Online" : "Offline"}
+                {onlineUserIds.includes(user._id.toString())
+                  ? "Online"
+                  : formatExactLastSeen(user.lastOnline || user.updatedAt)}
               </div>
             </div>
           </button>

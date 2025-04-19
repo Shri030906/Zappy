@@ -11,13 +11,16 @@ export const useChatStore = create((set, get) => ({
   isMessagesLoading: false,
   showInappropriateWords: true,
   chatType: "regular",
-  unreadCount: 0, // new state for unread messages count
+  unreadCounts: {}, // unread messages count per userId
 
   setShowInappropriateWords: (show) => set({ showInappropriateWords: show }),
 
   setChatType: (type) => set({ chatType: type }),
 
-  setUnreadCount: (count) => set({ unreadCount: count }),
+  setUnreadCountForUser: (userId, count) =>
+    set((state) => ({
+      unreadCounts: { ...state.unreadCounts, [userId]: count },
+    })),
 
   getUsers: async () => {
     set({ isUsersLoading: true });
@@ -36,13 +39,17 @@ export const useChatStore = create((set, get) => ({
     try {
       const chatType = get().chatType;
       const res = await axiosInstance.get(`/messages/${userId}?chatType=${chatType}`);
-      set({ messages: res.data, unreadCount: 0 }); // reset unread count on loading messages
+      set((state) => ({
+        messages: res.data,
+        unreadCounts: { ...state.unreadCounts, [userId]: 0 }, // reset unread count for this user
+      }));
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
       set({ isMessagesLoading: false });
     }
   },
+
   sendMessage: async (messageData) => {
     const { selectedUser, messages, chatType } = get();
     try {
@@ -58,21 +65,24 @@ export const useChatStore = create((set, get) => ({
 
   subscribeToMessages: () => {
     const { authUser, socket } = useAuthStore.getState();
-    if (!authUser) {
-      console.log("subscribeToMessages: No authUser");
-      return;
-    }
-    if (!socket) {
-      console.log("subscribeToMessages: No socket connection");
-      return;
-    }
-    console.log("subscribeToMessages: Subscribing to newMessage event");
+    if (!authUser) return;
+    if (!socket) return;
 
     socket.on("newMessage", (newMessage) => {
-      console.log("Received newMessage event:", newMessage);
+      const { selectedUser, unreadCounts } = get();
       if (newMessage.senderId !== authUser._id) {
-        // Increment unread count for messages from other users
-        set((state) => ({ unreadCount: state.unreadCount + 1 }));
+        if (selectedUser && newMessage.senderId === selectedUser._id) {
+          // Message from currently selected user, add to messages
+          set({
+            messages: [...get().messages, newMessage],
+          });
+        } else {
+          // Increment unread count for the sender user
+          const currentCount = unreadCounts[newMessage.senderId] || 0;
+          set({
+            unreadCounts: { ...unreadCounts, [newMessage.senderId]: currentCount + 1 },
+          });
+        }
         return;
       }
 
@@ -85,7 +95,6 @@ export const useChatStore = create((set, get) => ({
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
     if (socket) {
-      console.log("unsubscribeFromMessages: Unsubscribing from newMessage event");
       socket.off("newMessage");
     }
   },
