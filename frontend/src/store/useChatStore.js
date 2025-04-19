@@ -10,11 +10,14 @@ export const useChatStore = create((set, get) => ({
   isUsersLoading: false,
   isMessagesLoading: false,
   showInappropriateWords: true,
-  chatType: "regular", // new state for chat type
+  chatType: "regular",
+  unreadCount: 0, // new state for unread messages count
 
   setShowInappropriateWords: (show) => set({ showInappropriateWords: show }),
 
   setChatType: (type) => set({ chatType: type }),
+
+  setUnreadCount: (count) => set({ unreadCount: count }),
 
   getUsers: async () => {
     set({ isUsersLoading: true });
@@ -33,7 +36,7 @@ export const useChatStore = create((set, get) => ({
     try {
       const chatType = get().chatType;
       const res = await axiosInstance.get(`/messages/${userId}?chatType=${chatType}`);
-      set({ messages: res.data });
+      set({ messages: res.data, unreadCount: 0 }); // reset unread count on loading messages
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
@@ -54,14 +57,24 @@ export const useChatStore = create((set, get) => ({
   },
 
   subscribeToMessages: () => {
-    const { selectedUser } = get();
-    if (!selectedUser) return;
-
-    const socket = useAuthStore.getState().socket;
+    const { authUser, socket } = useAuthStore.getState();
+    if (!authUser) {
+      console.log("subscribeToMessages: No authUser");
+      return;
+    }
+    if (!socket) {
+      console.log("subscribeToMessages: No socket connection");
+      return;
+    }
+    console.log("subscribeToMessages: Subscribing to newMessage event");
 
     socket.on("newMessage", (newMessage) => {
-      const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id;
-      if (!isMessageSentFromSelectedUser) return;
+      console.log("Received newMessage event:", newMessage);
+      if (newMessage.senderId !== authUser._id) {
+        // Increment unread count for messages from other users
+        set((state) => ({ unreadCount: state.unreadCount + 1 }));
+        return;
+      }
 
       set({
         messages: [...get().messages, newMessage],
@@ -71,7 +84,10 @@ export const useChatStore = create((set, get) => ({
 
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
-    socket.off("newMessage");
+    if (socket) {
+      console.log("unsubscribeFromMessages: Unsubscribing from newMessage event");
+      socket.off("newMessage");
+    }
   },
 
   deleteMessage: async (messageId) => {
