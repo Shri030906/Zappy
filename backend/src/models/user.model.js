@@ -24,6 +24,14 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    showLastSeen: {
+      type: Boolean,
+      default: true,
+    },
+    lastOnline: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

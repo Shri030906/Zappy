@@ -1,6 +1,7 @@
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
 import { Send } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const PREVIEW_MESSAGES = [
   { id: 1, content: "Hey! How's it going?", isSent: false },
@@ -8,13 +9,33 @@ const PREVIEW_MESSAGES = [
 ];
 
 import { useChatStore } from "../store/useChatStore";
+import { useAuthStore } from "../store/useAuthStore";
 
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
   const { showInappropriateWords, setShowInappropriateWords } = useChatStore();
+  const { authUser, updateProfile } = useAuthStore();
 
-  const handleToggle = () => {
+  const [showLastSeen, setShowLastSeen] = useState(true);
+
+  useEffect(() => {
+    if (authUser && typeof authUser.showLastSeen === "boolean") {
+      setShowLastSeen(authUser.showLastSeen);
+    }
+  }, [authUser]);
+
+  const handleToggleInappropriate = () => {
     setShowInappropriateWords(!showInappropriateWords);
+  };
+
+  const handleToggleLastSeen = async () => {
+    const newValue = !showLastSeen;
+    setShowLastSeen(newValue);
+    try {
+      await updateProfile({ showLastSeen: newValue });
+    } catch (error) {
+      console.error("Failed to update last seen setting:", error);
+    }
   };
 
   return (
@@ -26,10 +47,23 @@ const SettingsPage = () => {
               type="checkbox"
               id="toggleInappropriate"
               checked={showInappropriateWords}
-              onChange={handleToggle}
+              onChange={handleToggleInappropriate}
               className="form-checkbox h-5 w-5 text-blue-600"
             />
             <span className="ml-2 text-gray-700">Show Inappropriate Words</span>
+          </label>
+        </div>
+
+        <div className="mt-6">
+          <label htmlFor="toggleLastSeen" className="inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              id="toggleLastSeen"
+              checked={showLastSeen}
+              onChange={handleToggleLastSeen}
+              className="form-checkbox h-5 w-5 text-blue-600"
+            />
+            <span className="ml-2 text-gray-700">Show Last Seen to Others</span>
           </label>
         </div>
 
@@ -42,10 +76,9 @@ const SettingsPage = () => {
           {THEMES.map((t) => (
             <button
               key={t}
-              className={`
-                group flex flex-col items-center gap-1.5 p-2 rounded-lg transition-colors
-                ${theme === t ? "bg-base-200" : "hover:bg-base-200/50"}
-              `}
+              className={`group flex flex-col items-center gap-1.5 p-2 rounded-lg transition-colors ${
+                theme === t ? "bg-base-200" : "hover:bg-base-200/50"
+              }`}
               onClick={() => setTheme(t)}
             >
               <div className="relative h-8 w-full rounded-md overflow-hidden" data-theme={t}>
@@ -91,17 +124,15 @@ const SettingsPage = () => {
                       className={`flex ${message.isSent ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`
-                          max-w-[80%] rounded-xl p-3 shadow-sm
-                          ${message.isSent ? "bg-primary text-primary-content" : "bg-base-200"}
-                        `}
+                        className={`max-w-[80%] rounded-xl p-3 shadow-sm ${
+                          message.isSent ? "bg-primary text-primary-content" : "bg-base-200"
+                        }`}
                       >
                         <p className="text-sm">{message.content}</p>
                         <p
-                          className={`
-                            text-[10px] mt-1.5
-                            ${message.isSent ? "text-primary-content/70" : "text-base-content/70"}
-                          `}
+                          className={`text-[10px] mt-1.5 ${
+                            message.isSent ? "text-primary-content/70" : "text-base-content/70"
+                          }`}
                         >
                           12:00 PM
                         </p>

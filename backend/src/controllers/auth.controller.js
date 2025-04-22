@@ -37,6 +37,7 @@ export const signup = async (req, res) => {
         fullName: newUser.fullName,
         email: newUser.email,
         profilePic: newUser.profilePic,
+        showLastSeen: newUser.showLastSeen,
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });
@@ -68,6 +69,7 @@ export const login = async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       profilePic: user.profilePic,
+      showLastSeen: user.showLastSeen,
     });
   } catch (error) {
     console.log("Error in login controller", error.message);
@@ -87,55 +89,39 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic } = req.body;
+    const { profilePic, showLastSeen } = req.body;
     const userId = req.user._id;
 
-    console.log("Cloudinary config:", {
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY ? "set" : "not set",
-      api_secret: process.env.CLOUDINARY_API_SECRET ? "set" : "not set",
-    });
+    if (profilePic) {
+      // Cloudinary upload logic
+      let imageToUpload = profilePic;
+      if (!profilePic.startsWith("data:image")) {
+        imageToUpload = "data:image/jpeg;base64," + profilePic;
+      }
 
-    if (!profilePic) {
-      return res.status(400).json({ message: "Profile pic is required" });
-    }
-
-    // Log request body size
-    const requestBodySize = Buffer.byteLength(JSON.stringify(req.body), "utf8");
-    console.log("Request body size (bytes):", requestBodySize);
-
-    // Validate base64 image size (max 5MB)
-    const maxSizeInBytes = 5 * 1024 * 1024;
-    if (profilePic.length > maxSizeInBytes) {
-      return res.status(400).json({ message: "Image size should be less than 5MB" });
-    }
-
-    console.log("Received profilePic length:", profilePic.length);
-    console.log("Received profilePic prefix:", profilePic.substring(0, 30));
-
-    // Ensure profilePic has data URI prefix
-    let imageToUpload = profilePic;
-    if (!profilePic.startsWith("data:image")) {
-      imageToUpload = "data:image/jpeg;base64," + profilePic;
-    }
-
-    try {
-      const uploadResponse = await cloudinary.uploader.upload(imageToUpload);
-      console.log("Cloudinary upload response:", uploadResponse);
-
+      try {
+        const uploadResponse = await cloudinary.uploader.upload(imageToUpload);
+        const updatedUser = await User.findByIdAndUpdate(
+          userId,
+          { profilePic: uploadResponse.secure_url, showLastSeen },
+          { new: true }
+        );
+        return res.status(200).json(updatedUser);
+      } catch (uploadError) {
+        console.error("Cloudinary upload error:", uploadError);
+        if (uploadError.http_code) {
+          return res.status(uploadError.http_code).json({ message: uploadError.message });
+        }
+        return res.status(500).json({ message: "Failed to upload image" });
+      }
+    } else {
+      // Update showLastSeen only
       const updatedUser = await User.findByIdAndUpdate(
         userId,
-        { profilePic: uploadResponse.secure_url },
+        { showLastSeen },
         { new: true }
       );
-
       return res.status(200).json(updatedUser);
-    } catch (uploadError) {
-      console.error("Cloudinary upload error:", uploadError);
-      if (uploadError.http_code) {
-        return res.status(uploadError.http_code).json({ message: uploadError.message });
-      }
-      return res.status(500).json({ message: "Failed to upload image" });
     }
   } catch (error) {
     console.log("error in update profile:", error);

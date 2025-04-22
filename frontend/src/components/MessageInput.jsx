@@ -1,13 +1,15 @@
 import { useRef, useState, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
-import { Image, Send, X, Camera } from "lucide-react";
+import { Image, Send, X, Camera, Smile } from "lucide-react";
 import toast from "react-hot-toast";
+import EmojiPicker from "emoji-picker-react";
 
 const MessageInput = ({ isBusinessChat }) => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [videoStream, setVideoStream] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -66,6 +68,10 @@ const MessageInput = ({ isBusinessChat }) => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const onEmojiClick = (emojiData) => {
+    setText((prev) => prev + emojiData.emoji);
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
@@ -80,13 +86,14 @@ const MessageInput = ({ isBusinessChat }) => {
       setText("");
       setImagePreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      setShowEmojiPicker(false);
     } catch (error) {
       console.error("Failed to send message:", error);
     }
   };
 
   return (
-    <div className="p-4 w-full">
+    <div className="p-4 w-full relative">
       {imagePreview && (
         <div className="mb-3 flex items-center gap-2">
           <div className="relative">
@@ -129,7 +136,7 @@ const MessageInput = ({ isBusinessChat }) => {
       )}
 
       <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-        <div className="flex-1 flex gap-2">
+        <div className="flex-1 flex gap-2 items-center">
           <input
             type="text"
             className="w-full input input-bordered rounded-lg input-sm sm:input-md"
@@ -138,6 +145,19 @@ const MessageInput = ({ isBusinessChat }) => {
             onChange={(e) => setText(e.target.value)}
             disabled={isCameraOpen}
           />
+          <button
+            type="button"
+            className="btn btn-circle btn-ghost"
+            onClick={() => setShowEmojiPicker((val) => !val)}
+            title="Toggle Emoji Picker"
+          >
+            <Smile size={20} />
+          </button>
+          {showEmojiPicker && (
+            <div className="absolute bottom-12 right-0 z-50">
+              <EmojiPicker onEmojiClick={onEmojiClick} />
+            </div>
+          )}
           <input
             type="file"
             accept="image/*"
@@ -146,7 +166,6 @@ const MessageInput = ({ isBusinessChat }) => {
             onChange={handleImageChange}
             disabled={isCameraOpen}
           />
-
           <button
             type="button"
             className={`hidden sm:flex btn btn-circle
@@ -156,7 +175,6 @@ const MessageInput = ({ isBusinessChat }) => {
           >
             <Image size={20} />
           </button>
-
           <button
             type="button"
             className="btn btn-circle btn-primary sm:flex"
