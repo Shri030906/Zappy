@@ -22,15 +22,22 @@ export function getReceiverSocketId(userId) {
 // used to store online users
 const userSocketMap = {}; // {userId: [socketId1, socketId2, ...]}
 
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
   console.log("A user connected", socket.id);
 
   const userId = socket.handshake.query.userId;
   if (userId) {
-    if (!userSocketMap[userId]) {
-      userSocketMap[userId] = [];
+    try {
+      const user = await User.findById(userId);
+      if (user && user.showLastSeen) {
+        if (!userSocketMap[userId]) {
+          userSocketMap[userId] = [];
+        }
+        userSocketMap[userId].push(socket.id);
+      }
+    } catch (error) {
+      console.error("Error fetching user for socket connection:", error);
     }
-    userSocketMap[userId].push(socket.id);
   }
 
   // io.emit() is used to send events to all the connected clients
