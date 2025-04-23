@@ -11,9 +11,9 @@ function formatExactLastSeen(dateString) {
 }
 
 const Sidebar = () => {
-  const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading, unreadCounts } = useChatStore();
+  const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading, unreadCounts, hiddenUserIds } = useChatStore();
 
-  const { onlineUsers } = useAuthStore();
+  const { onlineUsers, authUser } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 
   useEffect(() => {
@@ -23,8 +23,8 @@ const Sidebar = () => {
   const onlineUserIds = onlineUsers.map((id) => id.toString());
 
   const filteredUsers = showOnlineOnly
-    ? users.filter((user) => onlineUserIds.includes(user._id.toString()))
-    : users;
+    ? users.filter((user) => onlineUserIds.includes(user._id.toString()) && !hiddenUserIds.includes(user._id))
+    : users.filter((user) => !hiddenUserIds.includes(user._id));
 
   if (isUsersLoading) return <SidebarSkeleton />;
 
@@ -67,7 +67,7 @@ const Sidebar = () => {
                 alt={user.name}
                 className="size-12 object-cover rounded-full"
               />
-              {onlineUserIds.includes(user._id.toString()) && (
+              {onlineUserIds.includes(user._id.toString()) && !authUser?.showLastSeen && (
                 <span
                   className="absolute bottom-0 right-0 size-3 bg-green-500 
                   rounded-full ring-2 ring-zinc-900"
