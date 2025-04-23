@@ -10,6 +10,7 @@ const MessageInput = ({ isBusinessChat }) => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [videoStream, setVideoStream] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [facingMode, setFacingMode] = useState("user"); // "user" for front, "environment" for rear
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -18,7 +19,7 @@ const MessageInput = ({ isBusinessChat }) => {
   useEffect(() => {
     let active = true;
     if (isCameraOpen) {
-      navigator.mediaDevices.getUserMedia({ video: true })
+      navigator.mediaDevices.getUserMedia({ video: { facingMode } })
         .then((stream) => {
           if (!active) {
             stream.getTracks().forEach(track => track.stop());
@@ -45,7 +46,7 @@ const MessageInput = ({ isBusinessChat }) => {
         videoStream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [isCameraOpen]);
+  }, [isCameraOpen, facingMode]);
 
   const handleCapture = () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -141,6 +142,14 @@ const MessageInput = ({ isBusinessChat }) => {
             type="button"
           >
             Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline btn-secondary mt-2 ml-2"
+            onClick={() => setFacingMode((prev) => (prev === "user" ? "environment" : "user"))}
+            title="Switch Camera"
+          >
+            Switch Camera
           </button>
           <canvas ref={canvasRef} style={{ display: "none" }} />
         </div>
