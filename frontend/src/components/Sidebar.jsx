@@ -13,7 +13,7 @@ function formatExactLastSeen(dateString) {
 const Sidebar = () => {
   const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading, unreadCounts } = useChatStore();
 
-  const { onlineUsers, authUser } = useAuthStore();
+  const { onlineUsers } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ const Sidebar = () => {
                 alt={user.name}
                 className="size-12 object-cover rounded-full"
               />
-              {authUser?.showLastSeen && onlineUserIds.includes(user._id.toString()) && (
+              {onlineUserIds.includes(user._id.toString()) && (
                 <span
                   className="absolute bottom-0 right-0 size-3 bg-green-500 
                   rounded-full ring-2 ring-zinc-900"
@@ -87,11 +87,9 @@ const Sidebar = () => {
             <div className="hidden lg:block text-left min-w-0">
               <div className="font-medium truncate">{user.fullName}</div>
               <div className="text-sm text-zinc-400">
-                {authUser?.showLastSeen && user.showLastSeen
-                  ? onlineUserIds.includes(user._id.toString())
-                    ? "Online"
-                    : formatExactLastSeen(user.lastOnline || user.updatedAt)
-                  : "Offline"}
+                {onlineUserIds.includes(user._id.toString())
+                  ? "Online"
+                  : formatExactLastSeen(user.lastOnline || user.updatedAt)}
               </div>
             </div>
           </button>

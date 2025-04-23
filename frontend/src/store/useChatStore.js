@@ -12,6 +12,7 @@ export const useChatStore = create((set, get) => ({
   showInappropriateWords: true,
   chatType: "regular",
   unreadCounts: {}, // unread messages count per userId
+  hiddenUserIds: [],
 
   setShowInappropriateWords: (show) => set({ showInappropriateWords: show }),
 
@@ -111,4 +112,9 @@ export const useChatStore = create((set, get) => ({
   },
 
   setSelectedUser: (selectedUser) => set({ selectedUser }),
+
+  hideUserFromSidebar: (userId) =>
+    set((state) => ({
+      hiddenUserIds: [...state.hiddenUserIds, userId],
+    })),
 }));
