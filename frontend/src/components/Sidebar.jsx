@@ -67,7 +67,7 @@ const Sidebar = () => {
                 alt={user.name}
                 className="size-12 object-cover rounded-full"
               />
-              {onlineUserIds.includes(user._id.toString()) && (
+              {authUser?.showLastSeen && onlineUserIds.includes(user._id.toString()) && (
                 <span
                   className="absolute bottom-0 right-0 size-3 bg-green-500 
                   rounded-full ring-2 ring-zinc-900"

@@ -16,9 +16,14 @@ const MessageInput = ({ isBusinessChat }) => {
   const { sendMessage } = useChatStore();
 
   useEffect(() => {
+    let active = true;
     if (isCameraOpen) {
       navigator.mediaDevices.getUserMedia({ video: true })
         .then((stream) => {
+          if (!active) {
+            stream.getTracks().forEach(track => track.stop());
+            return;
+          }
           setVideoStream(stream);
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
@@ -34,6 +39,12 @@ const MessageInput = ({ isBusinessChat }) => {
         setVideoStream(null);
       }
     }
+    return () => {
+      active = false;
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+      }
+    };
   }, [isCameraOpen]);
 
   const handleCapture = () => {
