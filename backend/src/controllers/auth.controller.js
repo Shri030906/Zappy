@@ -37,6 +37,7 @@ export const signup = async (req, res) => {
         fullName: newUser.fullName,
         email: newUser.email,
         profilePic: newUser.profilePic,
+        showLastSeen: newUser.showLastSeen,
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });
@@ -68,6 +69,7 @@ export const login = async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       profilePic: user.profilePic,
+      showLastSeen: user.showLastSeen,
     });
   } catch (error) {
     console.log("Error in login controller", error.message);
@@ -87,21 +89,40 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic } = req.body;
+    const { profilePic, showLastSeen } = req.body;
     const userId = req.user._id;
 
-    if (!profilePic) {
-      return res.status(400).json({ message: "Profile pic is required" });
+    if (profilePic) {
+      // Cloudinary upload logic
+      let imageToUpload = profilePic;
+      if (!profilePic.startsWith("data:image")) {
+        imageToUpload = "data:image/jpeg;base64," + profilePic;
+      }
+
+      try {
+        const uploadResponse = await cloudinary.uploader.upload(imageToUpload);
+        const updatedUser = await User.findByIdAndUpdate(
+          userId,
+          { profilePic: uploadResponse.secure_url, showLastSeen },
+          { new: true }
+        );
+        return res.status(200).json(updatedUser);
+      } catch (uploadError) {
+        console.error("Cloudinary upload error:", uploadError);
+        if (uploadError.http_code) {
+          return res.status(uploadError.http_code).json({ message: uploadError.message });
+        }
+        return res.status(500).json({ message: "Failed to upload image" });
+      }
+    } else {
+      // Update showLastSeen only
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { showLastSeen },
+        { new: true }
+      );
+      return res.status(200).json(updatedUser);
     }
-
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { profilePic: uploadResponse.secure_url },
-      { new: true }
-    );
-
-    res.status(200).json(updatedUser);
   } catch (error) {
     console.log("error in update profile:", error);
     res.status(500).json({ message: "Internal server error" });

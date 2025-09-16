@@ -10,12 +10,27 @@ const ProfilePage = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image file.");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSizeInBytes = 5 * 1024 * 1024;
+    if (file.size > maxSizeInBytes) {
+      alert("Image size should be less than 5MB.");
+      return;
+    }
+
     const reader = new FileReader();
 
     reader.readAsDataURL(file);
 
     reader.onload = async () => {
       const base64Image = reader.result;
+      console.log("Uploading profilePic length:", base64Image.length);
+      console.log("Uploading profilePic prefix:", base64Image.substring(0, 30));
       setSelectedImg(base64Image);
       await updateProfile({ profilePic: base64Image });
     };

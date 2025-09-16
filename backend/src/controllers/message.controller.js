@@ -7,7 +7,8 @@ import { getReceiverSocketId, io } from "../lib/socket.js";
 export const getUsersForSidebar = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
-    const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+    // Explicitly include only needed fields and showLastSeen
+    const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("fullName profilePic showLastSeen");
 
     res.status(200).json(filteredUsers);
   } catch (error) {
@@ -20,8 +21,10 @@ export const getMessages = async (req, res) => {
   try {
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
+    const chatType = req.query.chatType || "regular";
 
     const messages = await Message.find({
+      chatType,
       $or: [
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
@@ -35,9 +38,41 @@ export const getMessages = async (req, res) => {
   }
 };
 
+export const deleteMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user._id;
+
+    // Find the message first
+    const message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    // Allow deletion if user is sender or receiver
+    if (message.senderId.toString() !== userId.toString() && message.receiverId.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "Unauthorized to delete this message" });
+    }
+
+    await Message.findByIdAndDelete(messageId);
+
+    // Notify receiver via socket
+    const receiverSocketId = getReceiverSocketId(message.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("messageDeleted", messageId);
+    }
+
+    res.status(200).json({ message: "Message deleted successfully" });
+  } catch (error) {
+    console.log("Error in deleteMessage controller: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image } = req.body;
+    const { text, image, chatType } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -53,6 +88,7 @@ export const sendMessage = async (req, res) => {
       receiverId,
       text,
       image: imageUrl,
+      chatType: chatType || "regular",
     });
 
     await newMessage.save();

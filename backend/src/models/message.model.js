@@ -18,6 +18,19 @@ const messageSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    isInappropriate: {
+      type: Boolean,
+      default: false,
+    },
+    isInappropriateImage: {
+      type: Boolean,
+      default: false,
+    },
+    chatType: {
+      type: String,
+      enum: ["regular", "business"],
+      default: "regular",
+    },
   },
   { timestamps: true }
 );

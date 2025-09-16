@@ -9,6 +9,19 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+  showInappropriateWords: true,
+  chatType: "regular",
+  unreadCounts: {}, // unread messages count per userId
+  hiddenUserIds: [],
+
+  setShowInappropriateWords: (show) => set({ showInappropriateWords: show }),
+
+  setChatType: (type) => set({ chatType: type }),
+
+  setUnreadCountForUser: (userId, count) =>
+    set((state) => ({
+      unreadCounts: { ...state.unreadCounts, [userId]: count },
+    })),
 
   getUsers: async () => {
     set({ isUsersLoading: true });
@@ -25,18 +38,26 @@ export const useChatStore = create((set, get) => ({
   getMessages: async (userId) => {
     set({ isMessagesLoading: true });
     try {
-      const res = await axiosInstance.get(`/messages/${userId}`);
-      set({ messages: res.data });
+      const chatType = get().chatType;
+      const res = await axiosInstance.get(`/messages/${userId}?chatType=${chatType}`);
+      set((state) => ({
+        messages: res.data,
+        unreadCounts: { ...state.unreadCounts, [userId]: 0 }, // reset unread count for this user
+      }));
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
       set({ isMessagesLoading: false });
     }
   },
+
   sendMessage: async (messageData) => {
-    const { selectedUser, messages } = get();
+    const { selectedUser, messages, chatType } = get();
     try {
-      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
+      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, {
+        ...messageData,
+        chatType,
+      });
       set({ messages: [...messages, res.data] });
     } catch (error) {
       toast.error(error.response.data.message);
@@ -44,14 +65,27 @@ export const useChatStore = create((set, get) => ({
   },
 
   subscribeToMessages: () => {
-    const { selectedUser } = get();
-    if (!selectedUser) return;
-
-    const socket = useAuthStore.getState().socket;
+    const { authUser, socket } = useAuthStore.getState();
+    if (!authUser) return;
+    if (!socket) return;
 
     socket.on("newMessage", (newMessage) => {
-      const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id;
-      if (!isMessageSentFromSelectedUser) return;
+      const { selectedUser, unreadCounts } = get();
+      if (newMessage.senderId !== authUser._id) {
+        if (selectedUser && newMessage.senderId === selectedUser._id) {
+          // Message from currently selected user, add to messages
+          set({
+            messages: [...get().messages, newMessage],
+          });
+        } else {
+          // Increment unread count for the sender user
+          const currentCount = unreadCounts[newMessage.senderId] || 0;
+          set({
+            unreadCounts: { ...unreadCounts, [newMessage.senderId]: currentCount + 1 },
+          });
+        }
+        return;
+      }
 
       set({
         messages: [...get().messages, newMessage],
@@ -61,8 +95,26 @@ export const useChatStore = create((set, get) => ({
 
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
-    socket.off("newMessage");
+    if (socket) {
+      socket.off("newMessage");
+    }
+  },
+
+  deleteMessage: async (messageId) => {
+    try {
+      await axiosInstance.delete(`/messages/${messageId}`);
+      set((state) => ({
+        messages: state.messages.filter((msg) => msg._id !== messageId),
+      }));
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete message");
+    }
   },
 
   setSelectedUser: (selectedUser) => set({ selectedUser }),
+
+  hideUserFromSidebar: (userId) =>
+    set((state) => ({
+      hiddenUserIds: [...state.hiddenUserIds, userId],
+    })),
 }));

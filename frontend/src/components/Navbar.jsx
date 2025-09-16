@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
-import { LogOut, MessageSquare, Settings, User } from "lucide-react";
+import { useChatStore } from "../store/useChatStore";
+import { LogOut, MessageSquare, Settings, User, Bell } from "lucide-react";
 
 const Navbar = () => {
   const { logout, authUser } = useAuthStore();
+  const { chatType, setChatType, unreadCount } = useChatStore();
 
   return (
     <header
@@ -12,22 +14,41 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-4 h-16">
         <div className="flex items-center justify-between h-full">
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 relative">
             <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-all">
               <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center">
                 <MessageSquare className="w-5 h-5 text-primary" />
               </div>
               <h1 className="text-lg font-bold">Zappy</h1>
             </Link>
+            <div className="relative cursor-pointer ml-2">
+              <Bell className="w-6 h-6 text-gray-600 hover:text-gray-800" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+                  {unreadCount}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Chat type toggle buttons */}
+            <button
+              className={`btn btn-sm ${chatType === "regular" ? "btn-primary" : "btn-outline"}`}
+              onClick={() => setChatType("regular")}
+            >
+              Regular Chat
+            </button>
+            <button
+              className={`btn btn-sm ${chatType === "business" ? "btn-primary" : "btn-outline"}`}
+              onClick={() => setChatType("business")}
+            >
+              Business Chat
+            </button>
+
             <Link
               to={"/settings"}
-              className={`
-              btn btn-sm gap-2 transition-colors
-
-              `}
+              className="btn btn-sm gap-2 transition-colors"
             >
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Settings</span>
@@ -35,7 +56,7 @@ const Navbar = () => {
 
             {authUser && (
               <>
-                <Link to={"/profile"} className={`btn btn-sm gap-2`}>
+                <Link to={"/profile"} className="btn btn-sm gap-2">
                   <User className="size-5" />
                   <span className="hidden sm:inline">Profile</span>
                 </Link>
